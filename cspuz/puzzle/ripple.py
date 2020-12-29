@@ -1,14 +1,15 @@
 import sys
 
-from cspuz import Solver, alldifferent, graph
-from url import to_puzz_link_ripple, parse_puzz_link_ripple
+from cspuz import Solver, alldifferent
+from url import parse_puzz_link_ripple
 
 
-def solve_ripple(height, width, block_num, problem):
+def solve_ripple(height, width, problem):
     solver = Solver()
     numbers = solver.int_array((height, width), 1, height * width + 1)
     solver.add_answer_key(numbers)
 
+    block_num = max(sum(problem, [])) + 1
     blocks = [[] for _ in range(block_num)]
     for y in range(height):
         for x in range(width):
@@ -36,13 +37,12 @@ def _main():
     height = width = block = 0
     problem = []
     if len(sys.argv) == 2:
-        height, width, block, problem = parse_puzz_link_ripple(sys.argv[1])
+        height, width, problem = parse_puzz_link_ripple(sys.argv[1])
 
     if len(sys.argv) == 1:
         # http://pzv.jp/p.html?ripple/6/6/9krkeab7dpm41l2i5o3s4
         height = 6
         width = 6
-        block = 9
         problem = [
             [0, 0, 1, 1, 1, 2],
             [0, 1, 1, 2, 2, 2],
@@ -64,7 +64,7 @@ def _main():
             print(n, end=' ')
         print('')
 
-    has_answer, answer = solve_ripple(height, width, block, problem)
+    has_answer, answer = solve_ripple(height, width, problem)
 
     if not has_answer:
         print('no answer', file=sys.stderr)

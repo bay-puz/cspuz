@@ -135,7 +135,7 @@ def parse_puzz_link_ripple(url):
                 problem = _set_block(y, x, block, same_block, problem)
                 block += 1
 
-    return height, width, block, problem
+    return height, width, problem
 
 
 def _set_block(y, x, block_id, same_block_list, problem):
