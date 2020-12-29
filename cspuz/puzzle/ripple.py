@@ -1,6 +1,7 @@
 import sys
 
-from cspuz import Solver, alldifferent
+from cspuz import Solver, alldifferent, graph
+from url import to_puzz_link_ripple, parse_puzz_link_ripple
 
 
 def solve_ripple(height, width, block_num, problem):
@@ -32,24 +33,30 @@ def solve_ripple(height, width, block_num, problem):
 
 
 def _main():
-    # http://pzv.jp/p.html?ripple/6/6/9krkeab7dpm41l2i5o3s4
-    height = 6
-    width = 6
-    block = 9
-    problem = [
-        [0, 0, 1, 1, 1, 2],
-        [0, 1, 1, 2, 2, 2],
-        [0, 5, 7, 7, 2, 3],
-        [6, 5, 5, 3, 3, 3],
-        [6, 6, 8, 3, 4, 4],
-        [6, 6, 8, 8, 4, 4],
-        [1, 0, 0, 0, 0, 0],
-        [0, 2, 0, 0, 0, 5],
-        [0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 3, 0, 0],
-        [0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 4],
-    ]
+    height = width = block = 0
+    problem = []
+    if len(sys.argv) == 2:
+        height, width, block, problem = parse_puzz_link_ripple(sys.argv[1])
+    if len(sys.argv) == 1:
+        # http://pzv.jp/p.html?ripple/6/6/9krkeab7dpm41l2i5o3s4
+        height = 6
+        width = 6
+        block = 9
+        problem = [
+            [0, 0, 1, 1, 1, 2],
+            [0, 1, 1, 2, 2, 2],
+            [0, 5, 7, 7, 2, 3],
+            [6, 5, 5, 3, 3, 3],
+            [6, 6, 8, 3, 4, 4],
+            [6, 6, 8, 8, 4, 4],
+            [1, 0, 0, 0, 0, 0],
+            [0, 2, 0, 0, 0, 5],
+            [0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 3, 0, 0],
+            [0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 4],
+        ]
+
     has_answer, answer = solve_ripple(height, width, block, problem)
 
     if not has_answer:
