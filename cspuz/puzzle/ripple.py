@@ -37,6 +37,7 @@ def _main():
     problem = []
     if len(sys.argv) == 2:
         height, width, block, problem = parse_puzz_link_ripple(sys.argv[1])
+
     if len(sys.argv) == 1:
         # http://pzv.jp/p.html?ripple/6/6/9krkeab7dpm41l2i5o3s4
         height = 6
@@ -57,12 +58,19 @@ def _main():
             [0, 0, 0, 0, 0, 4],
         ]
 
+    print('problem:')
+    for row in problem:
+        for n in row:
+            print(n, end=' ')
+        print('')
+
     has_answer, answer = solve_ripple(height, width, block, problem)
 
     if not has_answer:
         print('no answer', file=sys.stderr)
         return
 
+    print('answer:')
     for y in range(height):
         for x in range(width):
             if answer[y, x].sol is None:

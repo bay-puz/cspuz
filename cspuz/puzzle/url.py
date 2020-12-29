@@ -85,27 +85,33 @@ def to_puzz_link_ripple(height, width, problem):
 
 
 def parse_puzz_link_ripple(url):
-    height, width, body = url.split('/')[-3:]
+    width, height, body = url.split('/')[-3:]
     height = int(height)
     width = int(width)
 
     problem = [[None for _ in range(width)] for _ in range(height)]
     problem += [[0 for _ in range(width)] for _ in range(height)]
-    borders_right = [[0 for _ in range(width - 1)] for _ in range(height)]
-    borders_down = [[0 for _ in range(width)] for _ in range(height - 1)]
+    borders_right = [[None for _ in range(width - 1)] for _ in range(height)]
+    borders_down = [[None for _ in range(width)] for _ in range(height - 1)]
     pos = 0
     for s in body:
         if pos < height * (width - 1) + (height - 1) * width:
             dec = _decode_0v(s)
             border = format(dec, '0>5b')
-            for b in border:
-                if pos < height * (width - 1):
-                    w = width - 1
+            w = width - 1
+            if pos < height * w:
+                for b in border:
                     borders_right[int(pos / w)][pos % w] = bool(int(b))
-                else:
-                    pos_d = pos - (height * (width - 1))
-                    borders_down[int(pos_d / width)][pos % width] = bool(int(b))
-                pos += 1
+                    pos += 1
+                    if pos == height * w:
+                        break
+            elif pos < height * w + (height - 1) * width:
+                for b in border:
+                    pos_d = pos - (height * w)
+                    borders_down[int(pos_d / width)][pos_d % width] = bool(int(b))
+                    pos += 1
+                    if pos == height * w + (height - 1) * width:
+                        break
         else:
             p = pos - (height * (width - 1) + (height - 1) * width)
             if s.isdecimal():
