@@ -1,3 +1,6 @@
+from cspuz.puzzle import util
+
+
 def _encode_pzpr(n, code):
     if n < 0:
         return ''
@@ -38,7 +41,15 @@ def _decode_0v(s):
 
 
 def _decode_gz(s):
-    return _decode_pzpr(s, '0ghijklmnopqrstuvwxyz')
+    return _decode_pzpr(s, 'ghijklmnopqrstuvwxyz') + 1
+
+
+def _is_number(s):
+    try:
+        int(s, 16)
+    except ValueError:
+        return False
+    return True
 
 
 def to_puzz_link_ripple(height, width, problem):
@@ -89,10 +100,9 @@ def parse_puzz_link_ripple(url):
     height = int(height)
     width = int(width)
 
-    problem = [[None for _ in range(width)] for _ in range(height)]
-    problem += [[0 for _ in range(width)] for _ in range(height)]
     borders_right = [[None for _ in range(width - 1)] for _ in range(height)]
     borders_down = [[None for _ in range(width)] for _ in range(height - 1)]
+    numbers = [[0 for _ in range(width)] for _ in range(height)]
     pos = 0
     for s in body:
         if pos < height * (width - 1) + (height - 1) * width:
@@ -114,37 +124,12 @@ def parse_puzz_link_ripple(url):
                         break
         else:
             p = pos - (height * (width - 1) + (height - 1) * width)
-            if s.isdecimal():
-                problem[int(p / width) + height][p % width] = int(s)
+            if _is_number(s):
+                numbers[int(p / width)][p % width] = int(s, 16)
                 pos += 1
             else:
                 pos += _decode_gz(s)
 
-    same_block = []
-    for y in range(height):
-        for x in range(width):
-            if x < width - 1 and not borders_right[y][x]:
-                same_block.append(([y, x], [y, x+1]))
-            if y < height - 1 and not borders_down[y][x]:
-                same_block.append(([y, x], [y+1, x]))
-
-    block = 0
-    for y in range(height):
-        for x in range(width):
-            if problem[y][x] is None:
-                problem = _set_block(y, x, block, same_block, problem)
-                block += 1
+    problem = util.split_block_by_border(height, width, borders_right, borders_down) + numbers
 
     return height, width, problem
-
-
-def _set_block(y, x, block_id, same_block_list, problem):
-    problem[y][x] = block_id
-    for a, b in same_block_list:
-        if a == [y, x] and problem[b[0]][b[1]] is None:
-            problem[b[0]][b[1]] = block_id
-            problem = _set_block(b[0], b[1], block_id, same_block_list, problem)
-        if b == [y, x] and problem[a[0]][a[1]] is None:
-            problem[a[0]][a[1]] = block_id
-            problem = _set_block(a[0], a[1], block_id, same_block_list, problem)
-    return problem
