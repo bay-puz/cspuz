@@ -64,6 +64,14 @@ def to_puzz_link_ripple(height, width, problem):
                 else:
                     border += '0'
 
+    i = 0
+    border += '0000'
+    while i + 5 <= len(border):
+        dec = int(border[i:i+5], 2)
+        puzz_link_body += _encode_0v(dec)
+        i += 5
+
+    border = ''
     for y in range(height):
         for x in range(width):
             if y < height - 1:
@@ -74,7 +82,7 @@ def to_puzz_link_ripple(height, width, problem):
 
     i = 0
     border += '0000'
-    while i + 5 < len(border):
+    while i + 5 <= len(border):
         dec = int(border[i:i+5], 2)
         puzz_link_body += _encode_0v(dec)
         i += 5

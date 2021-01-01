@@ -174,9 +174,7 @@ def _set_block(y, x, block_id, same_block_list, problem):
     problem[y][x] = block_id
     for a, b in same_block_list:
         if a == [y, x] and problem[b[0]][b[1]] is None:
-            problem[b[0]][b[1]] = block_id
             problem = _set_block(b[0], b[1], block_id, same_block_list, problem)
         if b == [y, x] and problem[a[0]][a[1]] is None:
-            problem[a[0]][a[1]] = block_id
             problem = _set_block(a[0], a[1], block_id, same_block_list, problem)
     return problem
