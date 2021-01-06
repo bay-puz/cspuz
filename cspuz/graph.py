@@ -370,11 +370,31 @@ def numbers_anti_knight(solver, numbers, has_number=None):
         for x in range(width):
             if y < height - 1:
                 if x < width - 2:
-                    solver.ensure((has_number[y, x] & has_number[y+1, x+2]).then(numbers[y][x] != numbers[y+1][x+2]))
+                    solver.ensure((has_number[y, x] & has_number[y+1, x+2]).then(numbers[y, x] != numbers[y+1, x+2]))
                 if x >= 2:
-                    solver.ensure((has_number[y, x] & has_number[y+1, x-2]).then(numbers[y][x] != numbers[y+1][x-2]))
+                    solver.ensure((has_number[y, x] & has_number[y+1, x-2]).then(numbers[y, x] != numbers[y+1, x-2]))
             if y < height - 2:
                 if x < width - 1:
-                    solver.ensure((has_number[y, x] & has_number[y+2, x+1]).then(numbers[y][x] != numbers[y+2][x+1]))
+                    solver.ensure((has_number[y, x] & has_number[y+2, x+1]).then(numbers[y, x] != numbers[y+2, x+1]))
                 if x >= 1:
-                    solver.ensure((has_number[y, x] & has_number[y+2, x-1]).then(numbers[y][x] != numbers[y+2][x-1]))
+                    solver.ensure((has_number[y, x] & has_number[y+2, x-1]).then(numbers[y, x] != numbers[y+2, x-1]))
+
+
+def active_vertices_anti_knight(solver, is_active):
+    if not _check_array_shape(is_active, bool, 2):
+        raise TypeError('`is_active` should be a 2-D bool Array')
+
+    height, width = is_active.shape
+
+    for y in range(height):
+        for x in range(width):
+            if y < height - 1:
+                if x < width - 2:
+                    solver.ensure(~(is_active[y, x] & is_active[y+1, x+2]))
+                if x >= 2:
+                    solver.ensure(~(is_active[y, x] & is_active[y+1, x-2]))
+            if y < height - 2:
+                if x < width - 1:
+                    solver.ensure(~(is_active[y, x] & is_active[y+2, x+1]))
+                if x >= 1:
+                    solver.ensure(~(is_active[y, x] & is_active[y+2, x-1]))

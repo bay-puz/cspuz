@@ -3,11 +3,11 @@ import math
 import sys
 import numpy as np
 
-from cspuz import Array, Solver
+from cspuz import Array, Solver, graph
 from cspuz.puzzle import util
 
 
-def solve_star_battle(n, blocks, k):
+def solve_star_battle(n, blocks, k, is_anti_knight=False):
     if not isinstance(blocks, Array):
         blocks = Array(blocks)
     solver = Solver()
@@ -23,6 +23,8 @@ def solve_star_battle(n, blocks, k):
     for i in range(n):
         solver.ensure(sum((has_star & (blocks == i)).cond(1, 0)) == k)
 
+    if is_anti_knight:
+        graph.active_vertices_anti_knight(solver, has_star)
     is_sat = solver.solve()
     return is_sat, has_star
 
