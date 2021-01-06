@@ -338,34 +338,43 @@ def active_edges_single_cycle(solver, is_active_edge, graph=None, use_graph_prim
         return _active_edges_single_cycle(solver, is_active_edge, graph, use_graph_primitive=use_graph_primitive)
 
 
-def numbers_non_consecutive(solver, numbers, graph=None):
-    if graph is None:
-        if not _check_array_shape(numbers, int, 2):
-            raise TypeError('`numbers` should be a 2-D int Array if graph is not specified')
-        solver.ensure(numbers[1:, :] != numbers[:-1, :] - 1)
-        solver.ensure(numbers[1:, :] != numbers[:-1, :] + 1)
-        solver.ensure(numbers[:, 1:] != numbers[:, :-1] - 1)
-        solver.ensure(numbers[:, 1:] != numbers[:, :-1] + 1)
-    else:
-        for i, j in graph:
-            solver.ensure(numbers[i] != numbers[j] - 1)
-            solver.ensure(numbers[i] != numbers[j] + 1)
-
-
-def numbers_anti_knight(solver, numbers):
+def numbers_non_consecutive(solver, numbers, has_number=None):
     if not _check_array_shape(numbers, int, 2):
         raise TypeError('`numbers` should be a 2-D int Array')
 
     height, width = numbers.shape
+    if has_number is None:
+        has_number = solver.bool_array((height, width))
+        solver.ensure(has_number)
+
+    for y in range(height):
+        for x in range(width):
+            if y > 0:
+                solver.ensure((has_number[y, x] & has_number[y-1, x]).then(numbers[y, x] != numbers[y-1, x] - 1))
+                solver.ensure((has_number[y, x] & has_number[y-1, x]).then(numbers[y, x] != numbers[y-1, x] + 1))
+            if x > 0:
+                solver.ensure((has_number[y, x] & has_number[y, x-1]).then(numbers[y, x] != numbers[y, x-1] - 1))
+                solver.ensure((has_number[y, x] & has_number[y, x-1]).then(numbers[y, x] != numbers[y, x-1] + 1))
+
+
+def numbers_anti_knight(solver, numbers, has_number=None):
+    if not _check_array_shape(numbers, int, 2):
+        raise TypeError('`numbers` should be a 2-D int Array')
+
+    height, width = numbers.shape
+    if has_number is None:
+        has_number = solver.bool_array((height, width))
+        solver.ensure(has_number)
+
     for y in range(height):
         for x in range(width):
             if y < height - 1:
                 if x < width - 2:
-                    solver.ensure(numbers[y][x] != numbers[y+1][x+2])
+                    solver.ensure((has_number[y, x] & has_number[y+1, x+2]).then(numbers[y][x] != numbers[y+1][x+2]))
                 if x >= 2:
-                    solver.ensure(numbers[y][x] != numbers[y+1][x-2])
+                    solver.ensure((has_number[y, x] & has_number[y+1, x-2]).then(numbers[y][x] != numbers[y+1][x-2]))
             if y < height - 2:
                 if x < width - 1:
-                    solver.ensure(numbers[y][x] != numbers[y+2][x+1])
+                    solver.ensure((has_number[y, x] & has_number[y+2, x+1]).then(numbers[y][x] != numbers[y+2][x+1]))
                 if x >= 1:
-                    solver.ensure(numbers[y][x] != numbers[y+2][x-1])
+                    solver.ensure((has_number[y, x] & has_number[y+2, x-1]).then(numbers[y][x] != numbers[y+2][x-1]))
