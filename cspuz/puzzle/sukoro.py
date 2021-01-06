@@ -7,7 +7,7 @@ from cspuz.constraints import count_true
 from cspuz.puzzle import util
 
 
-def solve_sukoro(height, width, problem):
+def solve_sukoro(height, width, problem, is_anti_knight=False):
     solver = Solver()
 
     has_number = solver.bool_array((height, width))
@@ -40,6 +40,9 @@ def solve_sukoro(height, width, problem):
             if problem[y][x] >= 0:
                 solver.ensure(nums[y, x] == problem[y][x])
                 solver.ensure(has_number[y, x])
+
+    if is_anti_knight:
+        graph.numbers_anti_knight(solver, nums, has_number)
 
     is_sat = solver.solve()
 
