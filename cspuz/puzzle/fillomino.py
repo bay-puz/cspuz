@@ -7,7 +7,7 @@ from cspuz.puzzle import util
 from cspuz.generator import generate_problem, count_non_default_values, ArrayBuilder2D
 
 
-def solve_fillomino(height, width, problem, checkered=False):
+def solve_fillomino(height, width, problem, checkered=False, is_non_con=False, is_anti_knight=False):
     solver = Solver()
     size = solver.int_array((height, width), 1, height * width)
     solver.add_answer_key(size)
@@ -22,6 +22,10 @@ def solve_fillomino(height, width, problem, checkered=False):
         color = solver.bool_array((height, width))
         solver.ensure((group_id[:, :-1] == group_id[:, 1:]) == (color[:, :-1] == color[:, 1:]))
         solver.ensure((group_id[:-1, :] == group_id[1:, :]) == (color[:-1, :] == color[1:, :]))
+    if is_non_con:
+        graph.numbers_non_consecutive(solver, size)
+    if is_anti_knight:
+        graph.numbers_anti_knight(solver, size)
     is_sat = solver.solve()
     return is_sat, size
 

@@ -6,7 +6,7 @@ from cspuz import Solver, graph
 from cspuz.puzzle import util
 
 
-def solve_view(height, width, problem):
+def solve_view(height, width, problem, is_non_con=False, is_anti_knight=False):
     solver = Solver()
     has_number = solver.bool_array((height, width))
     graph.active_vertices_connected(solver, has_number)
@@ -39,6 +39,12 @@ def solve_view(height, width, problem):
             if problem[y][x] >= 0:
                 solver.ensure(nums[y, x] == problem[y][x])
                 solver.ensure(has_number[y, x])
+
+    if is_non_con:
+        graph.numbers_non_consecutive(solver, nums, has_number)
+
+    if is_anti_knight:
+        graph.numbers_anti_knight(solver, nums, has_number)
 
     is_sat = solver.solve()
 
@@ -79,7 +85,7 @@ def generate_view(height, width, verbose=False):
             else:
                 raw_score = compute_score(nums)
                 if raw_score == fully_solved_score:
-                    return problem
+                    return problem, nums, has_number
                 clue_score = 0
                 for y2 in range(height):
                     for x2 in range(width):
@@ -99,12 +105,30 @@ def generate_view(height, width, verbose=False):
         temperature *= 0.995
     if verbose:
         print('failed', file=sys.stderr)
-    return None
+    return None, None
 
 
 def _main():
-    problem = generate_view(5, 5, True)
-    print(util.stringify_array(problem, str))
+    height = 8
+    width = 8
+    problem, number, has_number = generate_view(height, width, True)
+    if problem is not None:
+        for row in problem:
+            for num in row:
+                if num < 0:
+                    print('.', end=' ')
+                else:
+                    print(num, end=' ')
+            print('')
+        for y in range(height):
+            for x in range(width):
+                if has_number[y, x].sol:
+                    print(number[y, x].sol, end='')
+                else:
+                    print(' ', end='')
+            print('')
+        return
+
     # https://twitter.com/semiexp/status/1210955179270393856
     is_sat, nums, has_number = solve_view(8, 8, [
         [-1,  4, -1, -1,  2, -1, -1, -1],

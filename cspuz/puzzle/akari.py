@@ -1,12 +1,12 @@
 import sys
 
-from cspuz import Solver
+from cspuz import Solver, graph
 from cspuz.constraints import fold_or, count_true
 from cspuz.puzzle import util
 from cspuz.generator import generate_problem, count_non_default_values, ArrayBuilder2D
 
 
-def solve_akari(height, width, problem):
+def solve_akari(height, width, problem, is_anti_knight=True):
     solver = Solver()
     has_light = solver.bool_array((height, width))
     solver.add_answer_key(has_light)
@@ -71,6 +71,9 @@ def solve_akari(height, width, problem):
                         neighbors.append((y, x + 1))
                     solver.ensure(count_true([has_light[p] for p in neighbors]) == problem[y][x])
 
+    if is_anti_knight:
+        graph.active_vertices_anti_knight(solver, has_light)
+
     is_sat = solver.solve()
     return is_sat, has_light
 
@@ -86,6 +89,7 @@ def compute_score(ans):
 def generate_akari(height, width, no_easy=False, verbose=False):
     def pretest(problem):
         visited = [[False for _ in range(width)] for _ in range(height)]
+
         def visit(y, x):
             if not (0 <= y < height and 0 <= x < width and problem[y][x] == -2 and not visited[y][x]):
                 return

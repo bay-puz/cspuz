@@ -336,3 +336,65 @@ def active_edges_single_cycle(solver, is_active_edge, graph=None, use_graph_prim
         return is_passed_flat.reshape((is_active_edge.height + 1, is_active_edge.width + 1))
     else:
         return _active_edges_single_cycle(solver, is_active_edge, graph, use_graph_primitive=use_graph_primitive)
+
+
+def numbers_non_consecutive(solver, numbers, has_number=None):
+    if not _check_array_shape(numbers, int, 2):
+        raise TypeError('`numbers` should be a 2-D int Array')
+
+    height, width = numbers.shape
+    if has_number is None:
+        has_number = solver.bool_array((height, width))
+        solver.ensure(has_number)
+
+    for y in range(height):
+        for x in range(width):
+            if y > 0:
+                solver.ensure((has_number[y, x] & has_number[y-1, x]).then(numbers[y, x] != numbers[y-1, x] - 1))
+                solver.ensure((has_number[y, x] & has_number[y-1, x]).then(numbers[y, x] != numbers[y-1, x] + 1))
+            if x > 0:
+                solver.ensure((has_number[y, x] & has_number[y, x-1]).then(numbers[y, x] != numbers[y, x-1] - 1))
+                solver.ensure((has_number[y, x] & has_number[y, x-1]).then(numbers[y, x] != numbers[y, x-1] + 1))
+
+
+def numbers_anti_knight(solver, numbers, has_number=None):
+    if not _check_array_shape(numbers, int, 2):
+        raise TypeError('`numbers` should be a 2-D int Array')
+
+    height, width = numbers.shape
+    if has_number is None:
+        has_number = solver.bool_array((height, width))
+        solver.ensure(has_number)
+
+    for y in range(height):
+        for x in range(width):
+            if y < height - 1:
+                if x < width - 2:
+                    solver.ensure((has_number[y, x] & has_number[y+1, x+2]).then(numbers[y, x] != numbers[y+1, x+2]))
+                if x >= 2:
+                    solver.ensure((has_number[y, x] & has_number[y+1, x-2]).then(numbers[y, x] != numbers[y+1, x-2]))
+            if y < height - 2:
+                if x < width - 1:
+                    solver.ensure((has_number[y, x] & has_number[y+2, x+1]).then(numbers[y, x] != numbers[y+2, x+1]))
+                if x >= 1:
+                    solver.ensure((has_number[y, x] & has_number[y+2, x-1]).then(numbers[y, x] != numbers[y+2, x-1]))
+
+
+def active_vertices_anti_knight(solver, is_active):
+    if not _check_array_shape(is_active, bool, 2):
+        raise TypeError('`is_active` should be a 2-D bool Array')
+
+    height, width = is_active.shape
+
+    for y in range(height):
+        for x in range(width):
+            if y < height - 1:
+                if x < width - 2:
+                    solver.ensure(~(is_active[y, x] & is_active[y+1, x+2]))
+                if x >= 2:
+                    solver.ensure(~(is_active[y, x] & is_active[y+1, x-2]))
+            if y < height - 2:
+                if x < width - 1:
+                    solver.ensure(~(is_active[y, x] & is_active[y+2, x+1]))
+                if x >= 1:
+                    solver.ensure(~(is_active[y, x] & is_active[y+2, x-1]))
