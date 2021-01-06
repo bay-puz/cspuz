@@ -148,3 +148,33 @@ def encode_grid_segmentation(height, width, block_id):
             s.append(1 if block_id[y][x] != block_id[y + 1][x] else 0)
     ret += convert_binary_seq(s)
     return ret
+
+
+def split_block_by_border(height, width, borders_right, borders_down):
+    same_block = []
+    for y in range(height):
+        for x in range(width):
+            if x < width - 1 and not borders_right[y][x]:
+                same_block.append(([y, x], [y, x+1]))
+            if y < height - 1 and not borders_down[y][x]:
+                same_block.append(([y, x], [y+1, x]))
+
+    block = 0
+    problem = [[None for _ in range(width)] for _ in range(height)]
+    for y in range(height):
+        for x in range(width):
+            if problem[y][x] is None:
+                problem = _set_block(y, x, block, same_block, problem)
+                block += 1
+
+    return problem
+
+
+def _set_block(y, x, block_id, same_block_list, problem):
+    problem[y][x] = block_id
+    for a, b in same_block_list:
+        if a == [y, x] and problem[b[0]][b[1]] is None:
+            problem = _set_block(b[0], b[1], block_id, same_block_list, problem)
+        if b == [y, x] and problem[a[0]][a[1]] is None:
+            problem = _set_block(a[0], a[1], block_id, same_block_list, problem)
+    return problem
