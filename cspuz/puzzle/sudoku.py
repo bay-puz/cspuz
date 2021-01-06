@@ -1,13 +1,13 @@
 import sys
 import subprocess
 
-from cspuz import Solver
+from cspuz import Solver, graph
 from cspuz.constraints import alldifferent
 from cspuz.puzzle import util
 from cspuz.generator import generate_problem, count_non_default_values, ArrayBuilder2D
 
 
-def solve_sudoku(problem, n=3):
+def solve_sudoku(problem, n=3, is_non_con=False, is_anti_knight=False):
     size = n * n
     solver = Solver()
     answer = solver.int_array((size, size), 1, size)
@@ -22,6 +22,13 @@ def solve_sudoku(problem, n=3):
         for x in range(size):
             if problem[y][x] >= 1:
                 solver.ensure(answer[y, x] == problem[y][x])
+
+    if is_non_con:
+        graph.numbers_non_consecutive(solver, answer)
+
+    if is_anti_knight:
+        graph.numbers_anti_knight(solver, answer)
+
     is_sat = solver.solve()
 
     return is_sat, answer
