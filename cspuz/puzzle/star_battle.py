@@ -160,10 +160,7 @@ def to_puzz_link_starbattle(n, k, blocks, variant=False):
 
 def parse_puzz_link_starbattle(puzz_link_url):
     n, k, body = puzz_link_url.split('/')[-3:]
-    n = int(n)
-    k = int(k)
-    _, _, blocks = url.decode_blocks(n, n, body, is_hint_by_number=False)
-    return n, k, blocks
+    return int(n), int(k), url.decode_blocks(int(n), int(n), body, is_hint_by_number=False)
 
 
 def _main():

@@ -4,7 +4,7 @@ import sys
 
 from cspuz import Solver, graph
 from cspuz.constraints import count_true
-from cspuz.puzzle import util
+from cspuz.puzzle import util, url
 
 
 def solve_sukoro(height, width, problem, is_anti_knight=False):
@@ -137,57 +137,16 @@ def generate_sukoro_numbers_set(height, width, verbose=False, set=2, limit=10000
     return None
 
 
-def _encode_spaces(spaces):
-    if spaces > 26:
-        return 'z' + _encode_spaces(spaces - 26)
-    return chr(ord('a') + spaces - 1)
+def to_puzz_link_sukoro(height, width, problem, variant=False):
+    puzz_link_base = 'https://puzz.link/p?sukoro'
+    if variant:
+        puzz_link_base += '/v:'
+    return '{}/{}/{}/{}'.format(puzz_link_base, width, height, url.encode_numbers(height, width, problem, True, 4))
 
 
-def to_puzz_link_url(height, width, problem):
-    puzz_link_problem = []
-    spaces = 0
-    for row in problem:
-        for num in row:
-            if spaces == 26:
-                puzz_link_problem.append('z')
-                spaces = 0
-            if num == -1:
-                spaces += 1
-            else:
-                if spaces > 0:
-                    puzz_link_problem.append(_encode_spaces(spaces))
-                    spaces = 0
-                puzz_link_problem.append(str(num))
-    if spaces > 0:
-        puzz_link_problem.append(_encode_spaces(spaces))
-
-    return 'https://puzz.link/p?sukoro/{}/{}/{}'.format(width, height, ''.join(puzz_link_problem))
-
-
-def _decode_spaces(char):
-    return ord(char) - ord('a') + 1
-
-
-def parse_puzz_link_url(url):
-    height, width, body = url.split('/')[-3:]
-    height = int(height)
-    width = int(width)
-
-    i = 0
-    pos = 0
-    problem = [[-1 for _ in range(width)] for _ in range(height)]
-    num = ['0', '1', '2', '3', '4']
-    while i < len(body):
-        if body[i] in num:
-            problem[int(pos / width)][pos % width] = int(body[i])
-            pos += 1
-        elif body[i] == '.':
-            problem[int(pos / width)][pos % width] = -1
-            pos += 1
-        else:
-            pos += _decode_spaces(body[i])
-        i += 1
-    return height, width, problem
+def parse_puzz_link_sukoro(puzz_link_url):
+    height, width, body = url.split_puzz_link_url(puzz_link_url)
+    return height, width, url.decode_numbers(height, width, body)
 
 
 def _main():
@@ -196,7 +155,7 @@ def _main():
         if len(sys.argv) == 2:
             puzz_link = sys.argv[1]
         print('problem: {}'.format(puzz_link))
-        height, width, problem = parse_puzz_link_url(puzz_link)
+        height, width, problem = parse_puzz_link_sukoro(puzz_link)
         is_sat, nums, has_number = solve_sukoro(height, width, problem)
         print('has_answer:', is_sat)
         if is_sat:
@@ -220,12 +179,12 @@ def _main():
         height, width = map(int, sys.argv[1:])
         problem = generate_sukoro(height, width, True)
         if problem is not None:
-            print(to_puzz_link_url(height, width, problem))
+            print(to_puzz_link_sukoro(height, width, problem))
     elif len(sys.argv) == 5:
         height, width, set, limit = map(int, sys.argv[1:])
         problem = generate_sukoro_numbers_set(height, width, True, set, limit)
         if problem is not None:
-            print(to_puzz_link_url(height, width, problem))
+            print(to_puzz_link_sukoro(height, width, problem))
 
 
 if __name__ == '__main__':

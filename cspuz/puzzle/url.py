@@ -20,6 +20,12 @@ def _encode_gz(n):
     return _encode_pzpr(n, '0ghijklmnopqrstuvwxyz')
 
 
+def _encode_az(n):
+    if n == 0:
+        return ''
+    return _encode_pzpr(n, '0abcdefghijklmnopqrstuvwxyz')
+
+
 def _encode_hex(dec):
     ad = ''
     if dec >= 16:
@@ -44,9 +50,13 @@ def _decode_gz(s):
     return _decode_pzpr(s, 'ghijklmnopqrstuvwxyz') + 1
 
 
-def _is_number(s):
+def _decode_az(s):
+    return _decode_pzpr(s, 'abcdefghijklmnopqrstuvwxyz') + 1
+
+
+def _is_number(s, p):
     try:
-        int(s, 16)
+        int(s, p)
     except ValueError:
         return False
     return True
@@ -76,20 +86,20 @@ def encode_blocks(height, width, problem):
     return _encode_border(border_right) + _encode_border(border_down)
 
 
-def encode_numbers(height, width, numbers, zero_is_number=False):
+def encode_numbers(height, width, numbers, zero_is_number=False, max_number=20):
     ret = ''
     spaces = 0
     for y in range(height):
         for x in range(width):
             if numbers[y][x] > 0 or (numbers[y][x] == 0 and zero_is_number):
                 if spaces > 0:
-                    ret += _encode_gz(spaces)
+                    ret += _encode_az(spaces) if max_number < 10 else _encode_gz(spaces)
                     spaces = 0
-                ret += _encode_hex(numbers[y][x])
+                ret += str(numbers[y][x]) if max_number < 10 else _encode_hex(numbers[y][x])
             else:
                 spaces += 1
     if spaces > 0:
-        ret += _encode_gz(spaces)
+        ret += _encode_az(spaces) if max_number < 10 else _encode_gz(spaces)
 
     return ret
 
@@ -126,7 +136,7 @@ def decode_blocks(height, width, body, is_hint_by_number=False):
                         break
         elif is_hint_by_number:
             p = pos - pos_r - pos_d
-            if _is_number(s):
+            if _is_number(s, 16):
                 numbers[p // width][p % width] = int(s, 16)
                 pos += 1
             else:
@@ -135,4 +145,16 @@ def decode_blocks(height, width, body, is_hint_by_number=False):
     problem = util.split_block_by_border(height, width, borders_right, borders_down)
     if is_hint_by_number:
         problem += numbers
-    return height, width, problem
+    return problem
+
+
+def decode_numbers(height, width, body):
+    numbers = [[-1 for _ in range(width)] for _ in range(height)]
+    pos = 0
+    for s in body:
+        if _is_number(s, 10):
+            numbers[pos // width][pos % width] = int(s)
+            pos += 1
+        else:
+            pos += _decode_az(s)
+    return numbers
