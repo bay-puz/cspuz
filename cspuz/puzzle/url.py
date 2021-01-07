@@ -52,92 +52,89 @@ def _is_number(s):
     return True
 
 
-def to_puzz_link_ripple(height, width, problem):
-    puzz_link_body = ''
+def encode_blocks(height, width, problem):
+    def _encode_border(borders):
+        ret = ''
+        for i in range((len(borders) + 4) // 5):
+            dec = 0
+            for j in range(5):
+                if i * 5 + j < len(borders) and borders[i * 5 + j]:
+                    dec += (2 ** (4 - j))
+            ret += _encode_0v(dec)
+        return ret
 
-    border = ''
+    border_right = []
     for y in range(height):
+        for x in range(width - 1):
+            border_right.append(problem[y][x] != problem[y][x+1])
+
+    border_down = []
+    for y in range(height - 1):
         for x in range(width):
-            if x < width - 1:
-                if problem[y][x] != problem[y][x+1]:
-                    border += '1'
-                else:
-                    border += '0'
+            border_down.append(problem[y+1][x] != problem[y][x])
 
-    i = 0
-    border += '0000'
-    while i + 5 <= len(border):
-        dec = int(border[i:i+5], 2)
-        puzz_link_body += _encode_0v(dec)
-        i += 5
+    return _encode_border(border_right) + _encode_border(border_down)
 
-    border = ''
-    for y in range(height):
-        for x in range(width):
-            if y < height - 1:
-                if problem[y][x] != problem[y+1][x]:
-                    border += '1'
-                else:
-                    border += '0'
 
-    i = 0
-    border += '0000'
-    while i + 5 <= len(border):
-        dec = int(border[i:i+5], 2)
-        puzz_link_body += _encode_0v(dec)
-        i += 5
-
+def encode_numbers(height, width, numbers, zero_is_number=False):
+    ret = ''
     spaces = 0
-    for y in range(height, height*2):
+    for y in range(height):
         for x in range(width):
-            if problem[y][x] > 0:
+            if numbers[y][x] > 0 or (numbers[y][x] == 0 and zero_is_number):
                 if spaces > 0:
-                    puzz_link_body += _encode_gz(spaces)
+                    ret += _encode_gz(spaces)
                     spaces = 0
-                puzz_link_body += _encode_hex(problem[y][x])
+                ret += _encode_hex(numbers[y][x])
             else:
                 spaces += 1
     if spaces > 0:
-        puzz_link_body += _encode_gz(spaces)
+        ret += _encode_gz(spaces)
 
-    return 'https://puzz.link/p?ripple/{}/{}/{}'.format(height, width, puzz_link_body)
+    return ret
 
 
-def parse_puzz_link_ripple(url):
-    width, height, body = url.split('/')[-3:]
-    height = int(height)
-    width = int(width)
+def _split_puzz_link_url(puzz_link):
+    width, height, body = puzz_link.split('/')[-3:]
+    return int(height), int(width), body
+
+
+def decode_blocks(puzz_link, is_hint_by_number=False):
+    height, width, body = _split_puzz_link_url(puzz_link)
 
     borders_right = [[None for _ in range(width - 1)] for _ in range(height)]
     borders_down = [[None for _ in range(width)] for _ in range(height - 1)]
-    numbers = [[0 for _ in range(width)] for _ in range(height)]
+    if is_hint_by_number:
+        numbers = [[0 for _ in range(width)] for _ in range(height)]
     pos = 0
+    pos_r = (width - 1) * height
+    pos_d = width * (height - 1)
     for s in body:
-        if pos < height * (width - 1) + (height - 1) * width:
+        if pos < pos_r + pos_d:
             dec = _decode_0v(s)
             border = format(dec, '0>5b')
-            w = width - 1
-            if pos < height * w:
+            if pos < pos_r:
                 for b in border:
-                    borders_right[int(pos / w)][pos % w] = bool(int(b))
+                    borders_right[pos // (width - 1)][pos % (width - 1)] = bool(int(b))
                     pos += 1
-                    if pos == height * w:
+                    if pos == pos_r:
                         break
-            elif pos < height * w + (height - 1) * width:
+            elif pos < pos_r + pos_d:
                 for b in border:
-                    pos_d = pos - (height * w)
-                    borders_down[int(pos_d / width)][pos_d % width] = bool(int(b))
+                    p = pos - pos_r
+                    borders_down[p // width][p % width] = bool(int(b))
                     pos += 1
-                    if pos == height * w + (height - 1) * width:
+                    if pos == pos_r + pos_d:
                         break
-        else:
-            p = pos - (height * (width - 1) + (height - 1) * width)
+        elif is_hint_by_number:
+            p = pos - pos_r - pos_d
             if _is_number(s):
-                numbers[int(p / width)][p % width] = int(s, 16)
+                numbers[p // width][p % width] = int(s, 16)
                 pos += 1
             else:
                 pos += _decode_gz(s)
 
-    problem = util.split_block_by_border(height, width, borders_right, borders_down) + numbers
-
+    problem = util.split_block_by_border(height, width, borders_right, borders_down)
+    if is_hint_by_number:
+        problem += numbers
     return height, width, problem

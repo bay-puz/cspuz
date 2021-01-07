@@ -3,6 +3,7 @@ import sys
 from cspuz import Solver, alldifferent
 from cspuz.puzzle import url
 
+
 def solve_ripple(height, width, problem):
     solver = Solver()
     numbers = solver.int_array((height, width), 1, height * width + 1)
@@ -32,11 +33,26 @@ def solve_ripple(height, width, problem):
     return is_sat, numbers
 
 
+def to_puzz_link_ripple(height, width, problem, variant=False):
+    puzz_link_body = url.encode_blocks(height, width, problem[:height])
+    puzz_link_body += url.encode_numbers(height, width, problem[height:], zero_is_number=False)
+
+    puzz_link_base = 'https://puzz.link/p?ripple'
+    if variant:
+        puzz_link_base += '/v:'
+
+    return '{}/{}/{}/{}'.format(puzz_link_base, height, width, puzz_link_body)
+
+
+def parse_puzz_link_ripple(puzz_link_url):
+    return url.decode_blocks(puzz_link_url, is_hint_by_number=True)
+
+
 def _main():
     height = width = block = 0
     problem = []
     if len(sys.argv) == 2:
-        height, width, problem = url.parse_puzz_link_ripple(sys.argv[1])
+        height, width, problem = parse_puzz_link_ripple(sys.argv[1])
 
     if len(sys.argv) == 1:
         # http://pzv.jp/p.html?ripple/6/6/9krkeab7dpm41l2i5o3s4
