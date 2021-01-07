@@ -4,7 +4,7 @@ import sys
 import numpy as np
 
 from cspuz import Array, Solver, graph
-from cspuz.puzzle import util
+from cspuz.puzzle import util, url
 
 
 def solve_star_battle(n, blocks, k, is_anti_knight=False):
@@ -150,8 +150,20 @@ def generate_star_battle(n, k, verbose=False):
     return None
 
 
-def problem_to_pzv_url(n, k, blocks):
-    return 'http://pzv.jp/p.html?starbattle/{}/{}/{}/{}'.format(n, n, k, util.encode_grid_segmentation(n, n, blocks))
+def to_puzz_link_starbattle(n, k, blocks, variant=False):
+    puzz_link_base = 'https://puzz.link/p?starbattle'
+    if variant:
+        puzz_link_base += '/v:'
+
+    return '{}/{}/{}/{}/{}'.format(puzz_link_base, n, n, k, url.encode_blocks(n, n, blocks))
+
+
+def parse_puzz_link_starbattle(puzz_link_url):
+    n, k, body = puzz_link_url.split('/')[-3:]
+    n = int(n)
+    k = int(k)
+    _, _, blocks = url.decode_blocks(n, n, body, is_hint_by_number=False)
+    return n, k, blocks
 
 
 def _main():
@@ -168,12 +180,18 @@ def _main():
         print('has answer:', is_sat)
         if is_sat:
             print(util.stringify_array(has_star, {None: '?', True: '*', False: '.'}))
+    elif len(sys.argv) == 2:
+        n, k, problem = parse_puzz_link_starbattle(sys.argv[1])
+        is_sat, has_star = solve_star_battle(n, problem, k)
+        print('has answer:', is_sat)
+        if is_sat:
+            print(util.stringify_array(has_star, {None: '?', True: '*', False: '.'}))
     else:
         n, k = map(int, sys.argv[1:])
         while True:
             problem = generate_star_battle(n, k, verbose=True)
             if problem is not None:
-                print(problem_to_pzv_url(n, k, problem), flush=True)
+                print(to_puzz_link_starbattle(n, k, problem), flush=True)
 
 
 if __name__ == '__main__':

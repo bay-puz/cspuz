@@ -45,7 +45,8 @@ def to_puzz_link_ripple(height, width, problem, variant=False):
 
 
 def parse_puzz_link_ripple(puzz_link_url):
-    return url.decode_blocks(puzz_link_url, is_hint_by_number=True)
+    height, width, body = url.split_puzz_link_url(puzz_link_url)
+    return url.decode_blocks(int(height), int(width), body, is_hint_by_number=True)
 
 
 def _main():

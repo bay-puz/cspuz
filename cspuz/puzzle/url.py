@@ -94,14 +94,12 @@ def encode_numbers(height, width, numbers, zero_is_number=False):
     return ret
 
 
-def _split_puzz_link_url(puzz_link):
+def split_puzz_link_url(puzz_link):
     width, height, body = puzz_link.split('/')[-3:]
     return int(height), int(width), body
 
 
-def decode_blocks(puzz_link, is_hint_by_number=False):
-    height, width, body = _split_puzz_link_url(puzz_link)
-
+def decode_blocks(height, width, body, is_hint_by_number=False):
     borders_right = [[None for _ in range(width - 1)] for _ in range(height)]
     borders_down = [[None for _ in range(width)] for _ in range(height - 1)]
     if is_hint_by_number:
