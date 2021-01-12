@@ -54,6 +54,15 @@ def _decode_az(s):
     return _decode_pzpr(s, 'abcdefghijklmnopqrstuvwxyz') + 1
 
 
+def _decode_p(dec, p, len=5):
+    def _base_p(n):
+        if n >= p:
+            return str(_base_p(n//p)) + str(_base_p(n%p))
+        return str(n)
+
+    return _base_p(dec).zfill(len)
+
+
 def _is_number(s, p):
     try:
         int(s, p)
@@ -84,6 +93,20 @@ def encode_blocks(height, width, problem):
             border_down.append(problem[y+1][x] != problem[y][x])
 
     return _encode_border(border_right) + _encode_border(border_down)
+
+
+def encode_circles_in_border(height, width, problem):
+    def _encode_border(borders):
+        ret = ''
+        for i in range((len(borders) + 4) // 5):
+            dec = 0
+            for j in range(5):
+                if i * 5 + j < len(borders) and borders[i * 5 + j]:
+                    dec += (2 ** (4 - j))
+            ret += _encode_0v(dec)
+        return ret
+
+    return _encode_border(problem[:size]) + _encode_border(problem[size:])
 
 
 def encode_numbers(height, width, numbers, zero_is_number=False, max_number=20):
@@ -146,6 +169,26 @@ def decode_blocks(height, width, body, is_hint_by_number=False):
     if is_hint_by_number:
         problem += numbers
     return problem
+
+
+def decode_circles_in_border(height, width, body):
+    circles_right = [[None for _ in range(width - 1)] for _ in range(height)]
+    circles_down = [[None for _ in range(width)] for _ in range(height - 1)]
+
+    circles = ''
+    for s in body:
+        circles += _decode_p(_decode_0v(s), 3, 3)
+
+    len_r = (width - 1) * height
+    len_d = width * (height - 1)
+    for p, c in enumerate(circles):
+        if p < len_r:
+            circles_right[p // (width - 1)][p % (width - 1)] = int(c)
+        elif p < len_r + len_d:
+            p2 = p - len_r
+            circles_down[p2 // width][p2 % width] = int(c)
+
+    return circles_right + circles_down
 
 
 def decode_numbers(height, width, body):
