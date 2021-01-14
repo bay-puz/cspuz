@@ -1,4 +1,7 @@
-from cspuz import Array
+import random
+
+from cspuz import Array, Solver, graph
+from cspuz.constraints import alldifferent
 
 
 def stringify_array(array, symbol_map=None):
@@ -178,3 +181,28 @@ def _set_block(y, x, block_id, same_block_list, problem):
         if b == [y, x] and problem[a[0]][a[1]] is None:
             problem = _set_block(a[0], a[1], block_id, same_block_list, problem)
     return problem
+
+
+def generate_latin_square(size, is_anti_knight=False):
+    solver = Solver()
+    latin_array = solver.int_array((size, size), 1, size)
+
+    line = random.sample(range(1, size+1), size)
+    row = random.randrange(size)
+
+    for i in range(size):
+        solver.ensure(latin_array[row, i] == line[i])
+        solver.ensure(alldifferent(latin_array[i, :]))
+        solver.ensure(alldifferent(latin_array[:, i]))
+
+    if is_anti_knight:
+        graph.numbers_anti_knight(solver, latin_array)
+
+    solver.find_answer()
+
+    latin = [[0 for _ in range(size)] for _ in range(size)]
+    for y in range(size):
+        for x in range(size):
+            latin[x][y] = latin_array[y, x].sol
+
+    return latin

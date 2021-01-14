@@ -98,15 +98,16 @@ def encode_blocks(height, width, problem):
 def encode_circles_in_border(height, width, problem):
     def _encode_border(borders):
         ret = ''
-        for i in range((len(borders) + 4) // 5):
+        for i in range((len(borders) + 2) // 3):
             dec = 0
-            for j in range(5):
-                if i * 5 + j < len(borders) and borders[i * 5 + j]:
-                    dec += (2 ** (4 - j))
+            for j in range(3):
+                if i * 3 + j >= len(borders):
+                    break
+                dec += borders[i * 3 + j] * (3 ** (2 - j))
             ret += _encode_0v(dec)
         return ret
 
-    return _encode_border(problem[:size]) + _encode_border(problem[size:])
+    return _encode_border(sum(problem, []))
 
 
 def encode_numbers(height, width, numbers, zero_is_number=False, max_number=20):
