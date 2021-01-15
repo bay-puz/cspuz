@@ -205,4 +205,33 @@ def generate_latin_square(size, is_anti_knight=False):
         for x in range(size):
             latin[x][y] = latin_array[y, x].sol
 
+    if is_anti_knight:
+        return latin
+
+    for i in range(3):
+        lines = random.sample(range(size), 2)
+        latin = _swap_latin_square_row(size, latin, lines[0], lines[1])
+        lines = random.sample(range(size), 2)
+        latin = _swap_latin_square_column(size, latin, lines[0], lines[1])
+
+    return latin
+
+
+def _swap_latin_square_row(size, latin, row1, row2):
+    up = min(row1, row2)
+    down = max(row1, row2)
+    for x in range(size):
+        temp = latin[up][x]
+        latin[up][x] = latin[down][x]
+        latin[down][x] = temp
+    return latin
+
+
+def _swap_latin_square_column(size, latin, col1, col2):
+    left = min(col1, col2)
+    right = max(col1, col2)
+    for y in range(size):
+        temp = latin[y][left]
+        latin[y][left] = latin[y][right]
+        latin[y][right] = temp
     return latin
