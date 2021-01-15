@@ -357,6 +357,25 @@ def numbers_non_consecutive(solver, numbers, has_number=None):
                 solver.ensure((has_number[y, x] & has_number[y, x-1]).then(numbers[y, x] != numbers[y, x-1] + 1))
 
 
+def numbers_non_diagonally_consecutive(solver, numbers, has_number=None):
+    if not _check_array_shape(numbers, int, 2):
+        raise TypeError('`numbers` should be a 2-D int Array')
+
+    height, width = numbers.shape
+    if has_number is None:
+        has_number = solver.bool_array((height, width))
+        solver.ensure(has_number)
+
+    for y in range(height):
+        for x in range(width):
+            if y > 0 and x > 0:
+                    solver.ensure((has_number[y, x] & has_number[y-1, x-1]).then(numbers[y, x] != numbers[y-1, x-1] - 1))
+                    solver.ensure((has_number[y, x] & has_number[y-1, x-1]).then(numbers[y, x] != numbers[y-1, x-1] + 1))
+            if y > 0 and x < width - 1:
+                solver.ensure((has_number[y, x] & has_number[y-1, x+1]).then(numbers[y, x] != numbers[y-1, x+1] - 1))
+                solver.ensure((has_number[y, x] & has_number[y-1, x+1]).then(numbers[y, x] != numbers[y-1, x+1] + 1))
+
+
 def numbers_anti_knight(solver, numbers, has_number=None):
     if not _check_array_shape(numbers, int, 2):
         raise TypeError('`numbers` should be a 2-D int Array')

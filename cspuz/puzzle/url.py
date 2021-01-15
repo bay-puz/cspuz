@@ -192,13 +192,16 @@ def decode_circles_in_border(height, width, body):
     return circles_right + circles_down
 
 
-def decode_numbers(height, width, body):
+def decode_numbers(height, width, body, p=10):
     numbers = [[-1 for _ in range(width)] for _ in range(height)]
     pos = 0
     for s in body:
-        if _is_number(s, 10):
-            numbers[pos // width][pos % width] = int(s)
+        if _is_number(s, p):
+            numbers[pos // width][pos % width] = int(s, p)
             pos += 1
         else:
-            pos += _decode_az(s)
+            if p == 10:
+                pos += _decode_az(s)
+            else:
+                pos += _decode_gz(s)
     return numbers
