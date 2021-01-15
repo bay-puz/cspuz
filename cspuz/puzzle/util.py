@@ -1,4 +1,7 @@
-from cspuz import Array
+import random
+
+from cspuz import Array, Solver, graph
+from cspuz.constraints import alldifferent
 
 
 def stringify_array(array, symbol_map=None):
@@ -178,3 +181,57 @@ def _set_block(y, x, block_id, same_block_list, problem):
         if b == [y, x] and problem[a[0]][a[1]] is None:
             problem = _set_block(a[0], a[1], block_id, same_block_list, problem)
     return problem
+
+
+def generate_latin_square(size, is_anti_knight=False):
+    solver = Solver()
+    latin_array = solver.int_array((size, size), 1, size)
+
+    line = random.sample(range(1, size+1), size)
+    row = random.randrange(size)
+
+    for i in range(size):
+        solver.ensure(latin_array[row, i] == line[i])
+        solver.ensure(alldifferent(latin_array[i, :]))
+        solver.ensure(alldifferent(latin_array[:, i]))
+
+    if is_anti_knight:
+        graph.numbers_anti_knight(solver, latin_array)
+
+    solver.find_answer()
+
+    latin = [[0 for _ in range(size)] for _ in range(size)]
+    for y in range(size):
+        for x in range(size):
+            latin[x][y] = latin_array[y, x].sol
+
+    if is_anti_knight:
+        return latin
+
+    for i in range(3):
+        lines = random.sample(range(size), 2)
+        latin = _swap_latin_square_row(size, latin, lines[0], lines[1])
+        lines = random.sample(range(size), 2)
+        latin = _swap_latin_square_column(size, latin, lines[0], lines[1])
+
+    return latin
+
+
+def _swap_latin_square_row(size, latin, row1, row2):
+    up = min(row1, row2)
+    down = max(row1, row2)
+    for x in range(size):
+        temp = latin[up][x]
+        latin[up][x] = latin[down][x]
+        latin[down][x] = temp
+    return latin
+
+
+def _swap_latin_square_column(size, latin, col1, col2):
+    left = min(col1, col2)
+    right = max(col1, col2)
+    for y in range(size):
+        temp = latin[y][left]
+        latin[y][left] = latin[y][right]
+        latin[y][right] = temp
+    return latin
