@@ -1,13 +1,14 @@
 import sys
 import subprocess
+from math import sqrt
 
 from cspuz import Solver, graph
 from cspuz.constraints import alldifferent
-from cspuz.puzzle import util
+from cspuz.puzzle import util, url
 from cspuz.generator import generate_problem, count_non_default_values, ArrayBuilder2D
 
 
-def solve_sudoku(problem, n=3, is_non_con=False, is_anti_knight=False):
+def solve_sudoku(problem, n=3, is_non_con=False, is_anti_knight=False, is_non_dicon=False, is_anti_alfil=False):
     size = n * n
     solver = Solver()
     answer = solver.int_array((size, size), 1, size)
@@ -28,6 +29,12 @@ def solve_sudoku(problem, n=3, is_non_con=False, is_anti_knight=False):
 
     if is_anti_knight:
         graph.numbers_anti_knight(solver, answer)
+
+    if is_non_dicon:
+        graph.numbers_non_diagonally_consecutive(solver, answer)
+
+    if is_anti_alfil:
+        graph.numbers_anti_alfil(solver, answer)
 
     is_sat = solver.solve()
 
@@ -51,6 +58,18 @@ def generate_sudoku(n, max_clue=None, symmetry=False, verbose=False):
     return generated
 
 
+def parse_puzz_link_sudoku(puzz_link_url):
+    height, width, body = url.split_puzz_link_url(puzz_link_url)
+    return int(sqrt(height)), url.decode_numbers(height, width, body, 16)
+
+
+def to_puzz_link_sudoku(size, problem, variant=False):
+    puzz_link_base = 'https://puzz.link/p?sudoku'
+    if variant:
+        puzz_link_base += '/v:'
+    return '{}/{}/{}/{}'.format(puzz_link_base, size*size, size*size, url.encode_numbers(size*size, size*size, problem, max_number=16))
+
+
 def _main():
     if len(sys.argv) == 1:
         # https://commons.wikimedia.org/wiki/File:Sudoku-by-L2G-20050714.svg
@@ -68,6 +87,13 @@ def _main():
         is_sat, answer = solve_sudoku(problem)
         if is_sat:
             print(util.stringify_array(answer, dict([(None, '?')] + [(i, str(i)) for i in range(1, 10)])))
+    elif len(sys.argv[1]) > 3:
+        size, problem = parse_puzz_link_sudoku(sys.argv[1])
+        is_sat, answer = solve_sudoku(problem, size)
+        if is_sat:
+            print(util.stringify_array(answer, dict([(None, '?')] + [(i, str(i)) for i in range(1, 10)])))
+        else:
+            print('no answer')
     else:
         n = int(sys.argv[1])
         if len(sys.argv) >= 3:
@@ -76,10 +102,9 @@ def _main():
             max_clue = None
         while True:
             try:
-                problem = generate_sudoku(n, max_clue=max_clue, symmetry=True, verbose=True)
+                problem = generate_sudoku(n, max_clue=max_clue, symmetry=False, verbose=True)
                 if problem is not None:
-                    print(util.stringify_array(problem, lambda x: '.' if x == 0 else str(x)), flush=True)
-                    print(flush=True)
+                    print(to_puzz_link_sudoku(n, problem))
             except subprocess.TimeoutExpired:
                 print('timeout', file=sys.stderr)
 
