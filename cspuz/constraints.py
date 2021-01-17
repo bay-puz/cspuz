@@ -14,6 +14,8 @@ class Op(Enum):
     NEG = auto()  # -int : int
     ADD = auto()  # int + int : int
     SUB = auto()  # int - int : int
+    MUL = auto()  # int * int : int
+    MOD = auto()  # int % int : int
     EQ = auto()  # int == int : bool
     NE = auto()  # int != int : bool
     LE = auto()  # int <= int : bool
@@ -42,7 +44,7 @@ def _make_expr(op, operands):
             if shapes[0] != shapes[i]:
                 raise TypeError('operands have non-uniform shapes')
     # type checking
-    if op in [Op.NEG, Op.ADD, Op.SUB, Op.EQ, Op.NE, Op.LE, Op.LT, Op.GE, Op.GT, Op.ALLDIFF]:
+    if op in [Op.NEG, Op.ADD, Op.SUB, Op.MUL, Op.MOD, Op.EQ, Op.NE, Op.LE, Op.LT, Op.GE, Op.GT, Op.ALLDIFF]:
         # operand type: int
         if not all(map(lambda o: check_dtype(o, int), operands)):
             return NotImplemented
@@ -55,7 +57,7 @@ def _make_expr(op, operands):
             return NotImplemented
 
     if len(shapes) == 0:
-        if op in [Op.NEG, Op.ADD, Op.SUB, Op.IF]:
+        if op in [Op.NEG, Op.ADD, Op.SUB, Op.MUL, Op.MOD, Op.IF]:
             return IntExpr(op, operands)
         else:
             return BoolExpr(op, operands)
@@ -65,7 +67,7 @@ def _make_expr(op, operands):
         else:
             h, w = shapes[0]
             size = h * w
-        if op in [Op.NEG, Op.ADD, Op.SUB, Op.IF]:
+        if op in [Op.NEG, Op.ADD, Op.SUB, Op.MUL, Op.MOD, Op.IF]:
             dtype = int
         else:
             dtype = bool
@@ -156,7 +158,19 @@ class IntExpr(Expr):
         return _make_expr(Op.SUB, [self, other])
 
     def __rsub__(self, other):
-        return _make_expr(Op.ADD, [other, self])
+        return _make_expr(Op.SUB, [other, self])
+
+    def __mul__(self, other):
+        return _make_expr(Op.MUL, [self, other])
+
+    def __rmul__(self, other):
+        return _make_expr(Op.MUL, [other, self])
+
+    def __mod__(self, other):
+        return _make_expr(Op.MOD, [self, other])
+
+    def __rmod__(self, other):
+        return _make_expr(Op.MOD, [other, self])
 
     def __eq__(self, other):
         return _make_expr(Op.EQ, [self, other])
@@ -524,7 +538,19 @@ class Array(object):
         return _make_expr(Op.SUB, [self, other])
 
     def __rsub__(self, other):
-        return _make_expr(Op.ADD, [other, self])
+        return _make_expr(Op.SUB, [other, self])
+
+    def __mul__(self, other):
+        return _make_expr(Op.MUL, [self, other])
+
+    def __rmul__(self, other):
+        return _make_expr(Op.MUL, [other, self])
+
+    def __mod__(self, other):
+        return _make_expr(Op.MOD, [self, other])
+
+    def __rmod__(self, other):
+        return _make_expr(Op.MOD, [other, self])
 
     def __ge__(self, other):
         return _make_expr(Op.GE, [self, other])

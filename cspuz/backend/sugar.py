@@ -12,6 +12,8 @@ OP_TO_OPNAME = {
     Op.NEG: '-',
     Op.ADD: '+',
     Op.SUB: '-',
+    Op.MUL: '*',
+    Op.MOD: '%',
     Op.EQ: '=',
     Op.NE: '!=',
     Op.LE: '<=',
