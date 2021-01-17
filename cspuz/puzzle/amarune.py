@@ -21,22 +21,23 @@ def solve_amarune(height, width, problem):
 
     for y in range(height):
         for x in range(width-1):
-            if problem[y+height][x] in [0, 1, 2]:
-                solver.ensure(numbers[y, x] % numbers[y, x+1] == problem[y+height][x])
-            elif problem[y+height][x] == 3:
-                solver.ensure(numbers[y, x] % numbers[y, x+1] >= 3)
+            for i in range(height*width):
+                if problem[y+height][x] in [0, 1, 2]:
+                    solver.ensure((numbers[y, x+1] == i).then(numbers[y, x] % i == problem[y+height][x]))
+                elif problem[y+height][x] == 3:
+                    solver.ensure((numbers[y, x+1] == i).then(numbers[y, x] % i >= 3))
 
     for y in range(height-1):
         for x in range(width):
-            if problem[y+height*2][x] in [0, 1, 2]:
-                solver.ensure((numbers[y, x] > numbers[y+1, x]).then(numbers[y, x] % numbers[y+1, x] == problem[y+height*2][x]))
-                solver.ensure((numbers[y+1, x] > numbers[y, x]).then(numbers[y+1, x] % numbers[y, x] == problem[y+height*2][x]))
-            elif problem[y+height*2][x] == 3:
-                solver.ensure((numbers[y, x] > numbers[y+1, x]).then(numbers[y, x] % numbers[y+1, x] >= 3))
-                solver.ensure((numbers[y+1, x] > numbers[y, x]).then(numbers[y+1, x] % numbers[y, x] >= 3))
+            for i in range(height*width):
+                if problem[y+height*2][x] in [0, 1, 2]:
+                    solver.ensure(((numbers[y, x] > numbers[y+1, x]) & (numbers[y+1, x] == i)).then(numbers[y, x] % i == problem[y+height*2][x]))
+                    solver.ensure(((numbers[y+1, x] > numbers[y, x]) & (numbers[y, x] == i)).then(numbers[y+1, x] % i == problem[y+height*2][x]))
+                elif problem[y+height*2][x] == 3:
+                    solver.ensure(((numbers[y, x] > numbers[y+1, x]) & (numbers[y+1, x] == i)).then(numbers[y, x] % i >= 3))
+                    solver.ensure(((numbers[y+1, x] > numbers[y, x]) & (numbers[y, x] == i)).then(numbers[y+1, x] % i >= 3))
 
-    from cspuz.backend import z3
-    is_sat = solver.solve(z3)
+    is_sat = solver.solve()
     return is_sat, numbers
 
 
