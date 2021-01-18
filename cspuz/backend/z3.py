@@ -28,6 +28,16 @@ def _convert_expr(e, variables_dict):
             for i in range(1, len(operands)):
                 ret = ret - operands[i]
             return ret
+        elif e.op == Op.MUL:
+            ret = operands[0]
+            for i in range(1, len(operands)):
+                ret = ret * operands[i]
+            return ret
+        elif e.op == Op.MOD:
+            ret = operands[0]
+            for i in range(1, len(operands)):
+                ret = ret % operands[i]
+            return ret
         elif e.op == Op.EQ:
             return operands[0] == operands[1]
         elif e.op == Op.NE:
