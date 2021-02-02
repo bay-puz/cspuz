@@ -66,7 +66,10 @@ class Builder:
 class Choice(Builder):
     def __init__(self, choice, default):
         self.choice = list(choice)
-        self.default = default
+        if default is None:
+            self.default = random.choice(list(choice))
+        else:
+            self.default = default
 
     def initial(self):
         return self.default
