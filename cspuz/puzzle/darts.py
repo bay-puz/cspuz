@@ -25,8 +25,13 @@ def solve_darts(target, darts, board):
     return is_sat, is_dart
 
 
-def generate_darts(darts=3, size=6, score_range=range(10, 50), verbose=True):
+def generate_darts(darts=3, size=6, score_range=range(10, 50), target=None, verbose=True):
     pattern = [Choice(list(score_range), None) for _ in range(size)]
+
+    def _target(target, darts, board):
+        if target is not None:
+            return target
+        return sum(board[0:darts])
 
     def pretest(board):
         for i in range(len(board)):
@@ -35,13 +40,14 @@ def generate_darts(darts=3, size=6, score_range=range(10, 50), verbose=True):
                     return False
         return True
 
-    board = generate_problem(lambda board: solve_darts(sum(board[0:darts]), darts, board),
+    board = generate_problem(lambda board: solve_darts(_target(target, darts, board), darts, board),
                              builder_pattern=pattern, pretest=pretest, verbose=verbose)
 
     if board is None:
         return None, None, None
-    target = sum(board[0:darts])
-    random.shuffle(board)
+    if target is None:
+        target = sum(board[0:darts])
+        random.shuffle(board)
 
     return target, darts, board
 
@@ -53,8 +59,10 @@ def _main():
         board = [48, 37, 31, 32, 45, 30, 49]
 
     else:
-        darts, size, min, max = map(int, sys.argv[1:])
-        target, darts, board = generate_darts(darts, size, range(min, max))
+        darts, size, min, max, target = map(int, sys.argv[1:])
+        if target == 0:
+            target = None
+        target, darts, board = generate_darts(darts, size, range(min, max), target)
         if board is None:
             print('failed to genarate')
             return
