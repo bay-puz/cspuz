@@ -2,7 +2,8 @@ import math
 import random
 import sys
 
-from cspuz.constraints import IntVar, BoolVar, Array
+from ..array import Array1D, Array2D
+from cspuz.expr import BoolExpr, IntExpr
 from cspuz.grid_frame import BoolGridFrame
 from cspuz.generator.builder import build_neighbor_generator
 
@@ -10,24 +11,31 @@ from cspuz.generator.builder import build_neighbor_generator
 def default_score_calculator(*args):
     score = 0
     for arg in args:
-        if isinstance(arg, (IntVar, BoolVar)):
+        if isinstance(arg, (BoolExpr, IntExpr)) and arg.is_variable():
             if arg.sol is not None:
                 score += 1
-        elif isinstance(arg, (Array, BoolGridFrame)):
+        elif isinstance(arg, (Array1D, Array2D, BoolGridFrame)):
             for a in arg:
                 if a.sol is not None:
                     score += 1
+        elif isinstance(arg, list):
+            for a in arg:
+                score += default_score_calculator(a)
     return score
 
 
 def default_uniqueness_checker(*args):
     for arg in args:
-        if isinstance(arg, (IntVar, BoolVar)):
+        if isinstance(arg, (BoolExpr, IntExpr)) and arg.is_variable():
             if arg.sol is None:
                 return False
-        elif isinstance(arg, (Array, BoolGridFrame)):
+        elif isinstance(arg, (Array1D, Array2D, BoolGridFrame)):
             for a in arg:
                 if a.sol is None:
+                    return False
+        elif isinstance(arg, list):
+            for a in arg:
+                if not default_uniqueness_checker(a):
                     return False
     return True
 
@@ -56,14 +64,20 @@ def generate_problem(solver,
                      initial_temperature=5.0,
                      temperature_decay=0.995,
                      max_steps=None,
+                     solve_initial_problem=False,
                      verbose=False):
     if builder_pattern is not None:
         if initial_problem is not None or neighbor_generator is not None:
-            raise ValueError('initial_problem and neighbor_generator must not be specified if builder_pattern is specified')
-        initial_problem, neighbor_generator = build_neighbor_generator(builder_pattern)
+            raise ValueError(
+                'initial_problem and neighbor_generator must not be '
+                'specified if builder_pattern is specified')
+        initial_problem, neighbor_generator = build_neighbor_generator(
+            builder_pattern)
     else:
         if initial_problem is None or neighbor_generator is None:
-            raise ValueError('initial_problem and neighbor_generator must be specified if builder_pattern is not specified')
+            raise ValueError(
+                'initial_problem and neighbor_generator must be specified '
+                'if builder_pattern is not specified')
     if score is None:
         score = default_score_calculator
     if uniqueness is None:
@@ -75,6 +89,17 @@ def generate_problem(solver,
 
     if max_steps is None:
         max_steps = 1000
+
+    if solve_initial_problem:
+        is_sat, *answer = solver(problem)
+        if not is_sat:
+            return None
+        score_base = score(*answer)
+        if clue_penalty is None:
+            score_penalty = 0
+        else:
+            score_penalty = clue_penalty(problem)
+        current_score = score_base - score_penalty
 
     for step in range(max_steps):
         for next_problem in neighbor_generator(problem):
@@ -96,15 +121,19 @@ def generate_problem(solver,
                 next_score_penalty = clue_penalty(next_problem)
             next_score = next_score_base - next_score_penalty
 
-            update = current_score is None or current_score <= next_score or \
-                     random.random() < math.exp((next_score - current_score) / temperature)
+            update = current_score is None or current_score <= next_score \
+                or random.random() < math.exp(
+                    (next_score - current_score) / temperature)
             if update:
                 if verbose:
                     print('score: {} -> {} (base: {}, penalty: {})'.format(
-                        current_score, next_score, next_score_base, next_score_penalty), file=sys.stderr)
+                        current_score, next_score, next_score_base,
+                        next_score_penalty),
+                          file=sys.stderr)
                 problem = next_problem
                 current_score = next_score
                 break
         temperature *= temperature_decay
-    print('failed', file=sys.stderr)
+    if verbose:
+        print('failed', file=sys.stderr)
     return None
