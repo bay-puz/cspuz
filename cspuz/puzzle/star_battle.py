@@ -4,7 +4,8 @@ import sys
 import numpy as np
 
 from cspuz import Array, Solver, graph
-from cspuz.puzzle import util, url
+from cspuz.constraints import count_true
+from cspuz.puzzle import util
 
 
 def solve_star_battle(n, blocks, k, is_anti_knight=False):
@@ -21,7 +22,12 @@ def solve_star_battle(n, blocks, k, is_anti_knight=False):
     solver.ensure(~(has_star[:-1, :-1] & has_star[1:, 1:]))
     solver.ensure(~(has_star[:-1, 1:] & has_star[1:, :-1]))
     for i in range(n):
-        solver.ensure(sum((has_star & (blocks == i)).cond(1, 0)) == k)
+        cells = []
+        for y in range(n):
+            for x in range(n):
+                if blocks[y][x] == i:
+                    cells.append(has_star[y, x])
+        solver.ensure(count_true(cells) == k)
 
     if is_anti_knight:
         graph.active_vertices_anti_knight(solver, has_star)
@@ -53,7 +59,7 @@ def _initial_blocks(n):
                     x2 = x + dx
                     if 0 <= y2 < n and 0 <= x2 < n and blocks[y2][x2] != -1:
                         cand.append((y, x, blocks[y2][x2]))
-        w = [sz[g] ** -4 for _, _, g in cand]
+        w = [sz[g]**-4 for _, _, g in cand]
         p = np.array(w) / sum(w)
         i = np.random.choice(np.arange(len(cand)), p=p)
         y, x, g = cand[i]
@@ -66,7 +72,8 @@ def _is_connected(n, blocks, g, excluded):
     visited = [[False for _ in range(n)] for _ in range(n)]
 
     def visit(y, x):
-        if not (0 <= y < n and 0 <= x < n) or (y, x) == excluded or visited[y][x] or blocks[y][x] != g:
+        if not (0 <= y < n and 0 <= x < n) or (
+                y, x) == excluded or visited[y][x] or blocks[y][x] != g:
             return
         visited[y][x] = True
         visit(y - 1, x)
@@ -134,11 +141,13 @@ def generate_star_battle(n, k, verbose=False):
                 score_next = _compute_score(has_star)
                 if score_next == fully_solved_score:
                     return blocks
-                update = (score < score_next or random.random() < math.exp((score_next - score) / temperature))
+                update = (score < score_next or random.random() < math.exp(
+                    (score_next - score) / temperature))
 
             if update:
                 if verbose:
-                    print('update: {} -> {}'.format(score, score_next), file=sys.stderr)
+                    print('update: {} -> {}'.format(score, score_next),
+                          file=sys.stderr)
                 score = score_next
                 break
             else:
@@ -150,17 +159,9 @@ def generate_star_battle(n, k, verbose=False):
     return None
 
 
-def to_puzz_link_starbattle(n, k, blocks, variant=False):
-    puzz_link_base = 'https://puzz.link/p?starbattle'
-    if variant:
-        puzz_link_base += '/v:'
-
-    return '{}/{}/{}/{}/{}'.format(puzz_link_base, n, n, k, url.encode_blocks(n, n, blocks))
-
-
-def parse_puzz_link_starbattle(puzz_link_url):
-    n, k, body = puzz_link_url.split('/')[-3:]
-    return int(n), int(k), url.decode_blocks(int(n), int(n), body, is_hint_by_number=False)
+def problem_to_pzv_url(n, k, blocks):
+    return 'http://pzv.jp/p.html?starbattle/{}/{}/{}/{}'.format(
+        n, n, k, util.encode_grid_segmentation(n, n, blocks))
 
 
 def _main():
@@ -176,19 +177,18 @@ def _main():
         ], 1)
         print('has answer:', is_sat)
         if is_sat:
-            print(util.stringify_array(has_star, {None: '?', True: '*', False: '.'}))
-    elif len(sys.argv) == 2:
-        n, k, problem = parse_puzz_link_starbattle(sys.argv[1])
-        is_sat, has_star = solve_star_battle(n, problem, k)
-        print('has answer:', is_sat)
-        if is_sat:
-            print(util.stringify_array(has_star, {None: '?', True: '*', False: '.'}))
+            print(
+                util.stringify_array(has_star, {
+                    None: '?',
+                    True: '*',
+                    False: '.'
+                }))
     else:
         n, k = map(int, sys.argv[1:])
         while True:
             problem = generate_star_battle(n, k, verbose=True)
             if problem is not None:
-                print(to_puzz_link_starbattle(n, k, problem), flush=True)
+                print(problem)
 
 
 if __name__ == '__main__':

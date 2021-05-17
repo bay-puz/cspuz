@@ -2,11 +2,10 @@
 CSP backend using the Sugar CSP solver (http://bach.istc.kobe-u.ac.jp/sugar/).
 """
 
-import cspuz
-from cspuz.constraints import Op, Expr, BoolVar, IntVar
+from ..configuration import config
+from ..expr import Op, Expr, BoolVar, IntVar
 
 from ._subproc import run_subprocess
-
 
 OP_TO_OPNAME = {
     Op.NEG: '-',
@@ -53,11 +52,13 @@ def _convert_expr(e):
         return 'b{}'.format(e.id)
     elif isinstance(e, IntVar):
         return 'i{}'.format(e.id)
+    elif e.op == Op.BOOL_CONSTANT:
+        return 'true' if e.operands[0] else 'false'
+    elif e.op == Op.INT_CONSTANT:
+        return str(e.operands[0])
     else:
-        return '({} {})'.format(
-            OP_TO_OPNAME[e.op],
-            ' '.join(map(_convert_expr, e.operands))
-        )
+        return '({} {})'.format(OP_TO_OPNAME[e.op],
+                                ' '.join(map(_convert_expr, e.operands)))
 
 
 class CSPSolver(object):
@@ -80,9 +81,12 @@ class CSPSolver(object):
             self.converted_constraints.append(_convert_expr(constraint))
 
     def solve(self):
-        csp_description = '\n'.join(self.converted_variables + self.converted_constraints)
-        sugar_path = cspuz.config.backend_path or 'sugar'
-        out = run_subprocess([sugar_path, '/dev/stdin'], csp_description, timeout=cspuz.config.solver_timeout).split('\n')
+        csp_description = '\n'.join(self.converted_variables +
+                                    self.converted_constraints)
+        sugar_path = config.backend_path or 'sugar'
+        out = run_subprocess([sugar_path, '/dev/stdin'],
+                             csp_description,
+                             timeout=config.solver_timeout).split('\n')
         if 'UNSATISFIABLE' in out[0]:
             for v in self.variables:
                 v.sol = None
